@@ -30,7 +30,7 @@ And after execution you will get a JSON formatted file with the clusters found b
 * ```--output-clusters```: found clusters output file in JSON format.
 * ```--oslom-output```: output directory to put resulting OSLOM files.
 * ```--min-cluster-size```: minimum cluster size for filtering after running OSLOM. Default: ```0```.
-* ```--oslom-exec```: path (absolute or relative) to the OSLOM executable to invoke. Default: ```oslom_dir```. You can use OSLOM in directed or undirected mode. See the OSLOM documentation for more information.
+* ```--oslom-exec```: path (absolute or relative) to the OSLOM executable to invoke. Default: ```oslom_dir```. You can use OSLOM in directed or undirected mode. See the [OSLOM documentation](http://www.oslom.org/code/ReadMe.pdf) for more information.
 
 Finally, you can also pass custom OSLOM arguments (with the exception of the ```-f``` option!) after all options to the runner in the following way:
 
