@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Hugo Hromic - http://github.com/hhromic
 
-"""Run OSLOM over user edges and process output communities."""
+"""Run OSLOM over a list of edges and process the output clusters."""
 
 import sys
 import os
@@ -16,7 +16,7 @@ import json
 import logging
 
 # Defaults
-DEF_MIN_COMM_SIZE = 0
+DEF_MIN_CLUSTER_SIZE = 0
 DEF_OSLOM_EXEC = "oslom_dir"
 DEF_OSLOM_ARGS = ["-w", "-r", "10", "-hr", "10"]
 
@@ -50,8 +50,8 @@ class IdRemapper(object):
                 writer.write("{}\t{}\n".format(key, value))
 
 class OslomRunner(object):
-    """Handles running OSLOM."""
-    TMP_INPUT_FILE = "input.tsv"
+    """Handles the execution of OSLOM."""
+    TMP_EDGES_FILE = "edges.tsv"
     OUTPUT_FILE = "tp"
     SEED_FILE = "time_seed.dat"
     IDS_MAPPING_FILE = "ids_mapping.tsv"
@@ -62,58 +62,58 @@ class OslomRunner(object):
         self.id_remapper = IdRemapper()
         self.working_dir = working_dir
         self.last_result = None
-    def get_path(self, fname):
-        """Get the full path to a file using current working directory."""
-        return os.path.join(self.working_dir, fname)
-    def store_user_edges(self, user_edges):
-        """Store temporary user edges input file with re-mapped Ids."""
-        with open(self.get_path(OslomRunner.TMP_INPUT_FILE), "w") as writer:
-            for edge in user_edges:
+    def get_path(self, filename):
+        """Get the full path to a file using the current working directory."""
+        return os.path.join(self.working_dir, filename)
+    def store_edges(self, edges):
+        """Store the temporary network edges input file with re-mapped Ids."""
+        with open(self.get_path(OslomRunner.TMP_EDGES_FILE), "w") as writer:
+            for edge in edges:
                 writer.write("{}\t{}\t{}\n".format(
                     self.id_remapper.get_int_id(edge[0]),
                     self.id_remapper.get_int_id(edge[1]),
                     edge[2]))
-    def run(self, oslom_exec, oslom_args, log_file):
-        """Run OSLOM and wait for termination."""
-        args = [oslom_exec, "-f", self.get_path(OslomRunner.TMP_INPUT_FILE)]
+    def run(self, oslom_exec, oslom_args, log_filename):
+        """Run OSLOM and wait for the process to finish."""
+        args = [oslom_exec, "-f", self.get_path(OslomRunner.TMP_EDGES_FILE)]
         args += oslom_args
-        with open(log_file, "w") as logwriter:
+        with open(log_filename, "w") as logwriter:
             start_time = time.time()
             retval = subprocess.call(args, cwd=self.working_dir,
                 stdout=logwriter, stderr=subprocess.STDOUT)
             self.last_result = {"args": args, "retval": retval,
                 "time": time.time() - start_time,
                 "output_dir": self.get_path("{}_oslo_files".format(
-                OslomRunner.TMP_INPUT_FILE))}
+                OslomRunner.TMP_EDGES_FILE))}
             return self.last_result
-    def read_communities(self, min_comm_size):
-        """Read and parse OSLOM output communities file."""
+    def read_clusters(self, min_cluster_size):
+        """Read and parse OSLOM clusters output file."""
         num_found = 0
-        communities = []
+        clusters = []
         with open(self.get_path(OslomRunner.OUTPUT_FILE), "r") as reader:
             # Read the output file every two lines
             for line1, line2 in itertools.izip_longest(*[reader] * 2):
                 info = OslomRunner.RE_INFOLINE.match(line1.strip()).groups()
                 nodes = line2.strip().split(" ")
-                if len(nodes) >= min_comm_size: # Apply min_comm_size
-                    communities += [{"id": int(info[0]), "bs": float(info[2]),
-                        "users": [{"id": self.id_remapper.get_str_id(int(n))}
+                if len(nodes) >= min_cluster_size: # Apply min_cluster_size
+                    clusters += [{"id": int(info[0]), "bs": float(info[2]),
+                        "nodes": [{"id": self.id_remapper.get_str_id(int(n))}
                         for n in nodes]}]
                 num_found += 1
-        return {"num_found": num_found, "communities": communities}
-    def copy_output_files(self, target):
-        """Copy OSLOM output files to a target directory."""
+        return {"num_found": num_found, "clusters": clusters}
+    def store_output_files(self, dir_path):
+        """Store OSLOM output files to a directory."""
         if self.last_result:
             for entry in os.listdir(self.last_result["output_dir"]):
                 path = os.path.join(self.last_result["output_dir"], entry)
                 if os.path.isfile(path):
-                    shutil.copy(path, os.path.join(target, entry))
+                    shutil.copy(path, os.path.join(dir_path, entry))
             shutil.copy(self.get_path(OslomRunner.SEED_FILE),
-                os.path.join(target, OslomRunner.SEED_FILE))
-            args_file = os.path.join(target, OslomRunner.ARGS_FILE)
+                os.path.join(dir_path, OslomRunner.SEED_FILE))
+            args_file = os.path.join(dir_path, OslomRunner.ARGS_FILE)
             with open(args_file, "w") as writer:
                 writer.write("{}\n".format(" ".join(self.last_result["args"])))
-            self.id_remapper.store_mapping(os.path.join(target,
+            self.id_remapper.store_mapping(os.path.join(dir_path,
                 OslomRunner.IDS_MAPPING_FILE))
     def cleanup(self):
         """Clean the working directory."""
@@ -128,18 +128,18 @@ def run_oslom(args):
     shutil.rmtree(args.oslom_output, ignore_errors=True)
     os.makedirs(args.oslom_output)
 
-    # Read user edges file
-    logging.info("Reading user edges file ...")
-    user_edges = []
-    with open(args.user_edges, "r") as reader:
+    # Read edges file
+    logging.info("Reading edges file ...")
+    edges = []
+    with open(args.edges, "r") as reader:
         for line in reader:
             source, target, weight = line.strip().split("\t", 2)
-            user_edges += [(source, target, weight)]
-    logging.info("{} user edge(s) found.".format(len(user_edges)))
+            edges += [(source, target, weight)]
+    logging.info("{} edge(s) found.".format(len(edges)))
 
-    # Write temporary user edges file with re-mapped Ids
-    logging.info("Writing temporary user edges file with re-mapped Ids ...")
-    oslom_runner.store_user_edges(user_edges)
+    # Write temporary edges file with re-mapped Ids
+    logging.info("Writing temporary edges file with re-mapped Ids ...")
+    oslom_runner.store_edges(edges)
 
     # Run OSLOM
     logging.info("Running OSLOM ...")
@@ -150,20 +150,20 @@ def run_oslom(args):
         return False
     logging.info("OSLOM2 execution time: {:.3f} secs.".format(result["time"]))
 
-    # Read back communities found by OSLOM
-    logging.info("Reading OSLOM output communities file ...")
-    communities = oslom_runner.read_communities(args.min_comm_size)
-    logging.info("{} community(ies), {} with minimum required size.".format(
-        communities["num_found"], len(communities["communities"])))
+    # Read back clusters found by OSLOM
+    logging.info("Reading OSLOM clusters output file ...")
+    clusters = oslom_runner.read_clusters(args.min_cluster_size)
+    logging.info("{} cluster(s) found, {} with minimum required size.".format(
+        clusters["num_found"], len(clusters["clusters"])))
 
-    # Write communities file
-    logging.info("Writing communities file ...")
-    with open(args.output_communities, "w") as writer:
-        json.dump(communities["communities"], writer, separators=(",",":"))
+    # Write clusters file
+    logging.info("Writing clusters file ...")
+    with open(args.output_clusters, "w") as writer:
+        json.dump(clusters["clusters"], writer, separators=(",",":"))
 
-    # Copy OSLOM output files
-    logging.info("Copying OSLOM output files ...")
-    oslom_runner.copy_output_files(args.oslom_output)
+    # Store OSLOM output files
+    logging.info("Writing OSLOM output files ...")
+    oslom_runner.store_output_files(args.oslom_output)
 
     # Clean-up temporary working directory
     oslom_runner.cleanup()
@@ -181,15 +181,15 @@ def main():
 
     # Program arguments
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--user-edges", metavar="FILE", required=True,
-        help="user edges file (TSV format)")
-    parser.add_argument("--output-communities", metavar="FILE", required=True,
-        help="output communities file (JSON format)")
-    parser.add_argument("--min-comm-size", metavar="INTEGER", required=False,
-        help="minimum community size", type=int, default=DEF_MIN_COMM_SIZE)
+    parser.add_argument("--edges", metavar="FILE", required=True,
+        help="input network edges file (TSV format)")
+    parser.add_argument("--output-clusters", metavar="FILE", required=True,
+        help="output clusters file (JSON format)")
+    parser.add_argument("--min-cluster-size", metavar="INT", required=False,
+        help="minimum cluster size", type=int, default=DEF_MIN_CLUSTER_SIZE)
     parser.add_argument("--oslom-output", metavar="DIRECTORY", required=True,
         help="output directory for OSLOM files")
-    parser.add_argument("--oslom-exec", metavar="EXECUTABLE", required=False,
+    parser.add_argument("--oslom-exec", metavar="PROGRAM", required=False,
         help="OSLOM executable path to use", default=DEF_OSLOM_EXEC)
     parser.add_argument("oslom_args", metavar="OSLOM_ARG", nargs="*",
         help="argument to pass to OSLOM (don't pass '-f' !)",
