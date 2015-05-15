@@ -194,6 +194,40 @@ def run(args):
     logging.info("finished")
     return True
 
+def run_in_memory(args, edges):
+    """Run OSLOM with an in-memory list of edges, return in-memory results."""
+    # Create an OSLOM runner with a temporary working directory
+    oslom_runner = OslomRunner(tempfile.mkdtemp())
+
+    # Write temporary edges file with re-mapped Ids
+    logging.info("writing temporary edges file with re-mapped Ids ...")
+    oslom_runner.store_edges(edges)
+
+    # Run OSLOM
+    logging.info("running OSLOM ...")
+    log_file = os.path.join(oslom_runner.working_dir, OSLOM_LOG_FILE)
+    result = oslom_runner.run(args.oslom_exec, args.oslom_args, log_file)
+    with open(log_file, "r") as reader:
+        oslom_log = reader.read()
+    if result["retval"] != 0:
+        logging.error("error running OSLOM, check the log")
+        return (None, oslom_log)
+    logging.info("OSLOM executed in %.3f secs", result["time"])
+
+    # Read back clusters found by OSLOM
+    logging.info("reading OSLOM clusters output file ...")
+    clusters = oslom_runner.read_clusters(args.min_cluster_size)
+    logging.info(
+        "%d cluster(s) found, %d with minimum required size",
+        clusters["num_found"], len(clusters["clusters"]))
+
+    # Clean-up temporary working directory
+    oslom_runner.cleanup()
+
+    # Finished
+    logging.info("finished")
+    return (clusters, oslom_log)
+
 def main():
     """Main interface function for the command line."""
     # Setup logging for the command line

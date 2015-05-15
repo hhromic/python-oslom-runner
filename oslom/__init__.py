@@ -7,3 +7,4 @@
 """An OSLOM Runner for Python."""
 
 from oslom.runner import run
+from oslom.runner import run_in_memory
