@@ -175,8 +175,8 @@ def run(args):
     logging.info("reading OSLOM clusters output file ...")
     clusters = oslom_runner.read_clusters(args.min_cluster_size)
     logging.info(
-        "%d cluster(s) found, %d with minimum required size",
-        clusters["num_found"], len(clusters["clusters"]))
+        "found %d cluster(s) and %d with size >= %d",
+        clusters["num_found"], len(clusters["clusters"]), args.min_cluster_size)
 
     # Write clusters file
     logging.info("writing output clusters file: %s", args.output_clusters)
@@ -218,8 +218,8 @@ def run_in_memory(args, edges):
     logging.info("reading OSLOM clusters output file ...")
     clusters = oslom_runner.read_clusters(args.min_cluster_size)
     logging.info(
-        "%d cluster(s) found, %d with minimum required size",
-        clusters["num_found"], len(clusters["clusters"]))
+        "found %d cluster(s) and %d with size >= %d",
+        clusters["num_found"], len(clusters["clusters"]), args.min_cluster_size)
 
     # Clean-up temporary working directory
     oslom_runner.cleanup()
