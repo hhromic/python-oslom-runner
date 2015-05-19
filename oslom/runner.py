@@ -15,7 +15,7 @@ import shutil
 import time
 import subprocess
 import itertools
-import json
+import simplejson as json
 import logging
 
 # Defaults
