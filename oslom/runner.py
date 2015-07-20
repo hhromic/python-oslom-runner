@@ -87,7 +87,7 @@ class OslomRunner(object):
     def run(self, oslom_exec, oslom_args, log_filename):
         """Run OSLOM and wait for the process to finish."""
         args = [oslom_exec, "-f", self.get_path(OslomRunner.TMP_EDGES_FILE)]
-        args += oslom_args
+        args.extend(oslom_args)
         with open(log_filename, "w") as logwriter:
             start_time = time.time()
             retval = subprocess.call(
@@ -111,11 +111,11 @@ class OslomRunner(object):
                 info = OslomRunner.RE_INFOLINE.match(line1.strip()).groups()
                 nodes = line2.strip().split(" ")
                 if len(nodes) >= min_cluster_size: # Apply min_cluster_size
-                    clusters += [
-                        {"id": int(info[0]), "bs": float(info[2]), \
-                        "nodes": [{"id": self.id_remapper.get_str_id(int(n))} \
-                        for n in nodes]}
-                    ]
+                    clusters.append({
+                        "id": int(info[0]),
+                        "bs": float(info[2]),
+                        "nodes": [{"id": self.id_remapper.get_str_id(int(n))} for n in nodes],
+                    })
                 num_found += 1
         return {"num_found": num_found, "clusters": clusters}
 
@@ -154,7 +154,7 @@ def run(args):
     with open(args.edges, "r") as reader:
         for line in reader:
             source, target, weight = line.strip().split("\t", 2)
-            edges += [(source, target, weight)]
+            edges.append((source, target, weight))
     logging.info("%d edge(s) found", len(edges))
 
     # Write temporary edges file with re-mapped Ids
