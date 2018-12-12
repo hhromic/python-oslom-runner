@@ -1,4 +1,17 @@
-# Hugo Hromic - http://github.com/hhromic
+# An OSLOM (community finding) runner for Python
+# Copyright 2014 Hugo Hromic
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 # OSLOM -- the community finding algorithm -- is described in:
 # Lancichinetti, Andrea, et al. "Finding Statistically Significant
@@ -15,8 +28,8 @@ import shutil
 import time
 import subprocess
 import itertools
-import simplejson as json
 import logging
+import simplejson as json
 
 # Defaults
 DEF_MIN_CLUSTER_SIZE = 0
@@ -238,25 +251,23 @@ def main():
 
     # Program arguments
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--edges", metavar="FILE", required=True,
-        help="input network edges file (TSV format)")
-    parser.add_argument(
-        "--output-clusters", metavar="FILE", required=True,
-        help="output clusters file (JSON format)")
-    parser.add_argument(
-        "--min-cluster-size", metavar="INTEGER", required=False,
-        help="minimum cluster size", type=int, default=DEF_MIN_CLUSTER_SIZE)
-    parser.add_argument(
-        "--oslom-output", metavar="DIRECTORY", required=True,
-        help="output directory for OSLOM files")
-    parser.add_argument(
-        "--oslom-exec", metavar="EXECUTABLE", required=False,
-        help="OSLOM executable program to use", default=DEF_OSLOM_EXEC)
-    parser.add_argument(
-        "oslom_args", metavar="OSLOM_ARG", nargs="*",
-        help="argument to pass to OSLOM (don't pass '-f' !)",
-        default=DEF_OSLOM_ARGS)
+    parser.add_argument("--edges", metavar="FILENAME", required=True,
+                        help="input network edges file in TSV format")
+    parser.add_argument("--output-clusters", metavar="FILENAME", required=True,
+                        help="output clusters file in JSON format")
+    parser.add_argument("--oslom-output", metavar="DIRECTORY", required=True,
+                        help="output directory for OSLOM files")
+    parser.add_argument("--min-cluster-size", metavar="INTEGER", type=int,
+                        default=DEF_MIN_CLUSTER_SIZE,
+                        help="minimum cluster size (default: %(default)s)")
+    parser.add_argument("--oslom-exec", metavar="EXECUTABLE",
+                        default=DEF_OSLOM_EXEC,
+                        help="OSLOM executable program to use "
+                             "(default: %(default)s)")
+    parser.add_argument("oslom_args", metavar="OSLOM_ARG", nargs="*",
+                        default=DEF_OSLOM_ARGS,
+                        help="argument to pass to OSLOM (don't pass '-f' !) "
+                             "(default: %(default)s)")
 
     # Run OSLOM with parsed arguments
     sys.exit(not run(parser.parse_args()))
