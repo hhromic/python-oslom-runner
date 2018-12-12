@@ -66,9 +66,9 @@ The default arguments used for OSLOM are `-w -r 10 -hr 10`, which sets the usage
 
 When you pass your own OSLOM arguments, none of the default options will be used. You should **NEVER** give the `-f` option because the runner automatically fills the value for it accordingly.
 
-## Using Programatically
+## Using Programmatically
 
-This OSLOM Runner can be used programatically inside your own Python scripts as well.
+This OSLOM Runner can be used programmatically inside your own Python scripts as well.
 
 There are two main functions to run OSLOM, both using nearly the same arguments:
 
