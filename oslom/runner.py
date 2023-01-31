@@ -123,7 +123,7 @@ class OslomRunner(object):
         clusters = []
         with open(self.get_path(OslomRunner.OUTPUT_FILE), "r") as reader:
             # Read the output file every two lines
-            for line1, line2 in itertools.zip_longest(*[reader] * 2):
+            for line1, line2 in zip_longest(*[reader] * 2):
                 info = OslomRunner.RE_INFOLINE.match(line1.strip()).groups()
                 nodes = line2.strip().split(" ")
                 if len(nodes) >= min_cluster_size: # Apply min_cluster_size
