@@ -26,10 +26,15 @@ import re
 import tempfile
 import shutil
 import time
-import subprocess
-import itertools
+import subprocess 
 import logging
 import simplejson as json
+try:
+    # Python 3 compatible
+    from itertools import zip_longest
+except ImportError:
+    # Python 2 compatible
+    from itertools import izip_longest as zip_longest
 
 # Defaults
 DEF_MIN_CLUSTER_SIZE = 0
@@ -120,7 +125,7 @@ class OslomRunner(object):
         clusters = []
         with open(self.get_path(OslomRunner.OUTPUT_FILE), "r") as reader:
             # Read the output file every two lines
-            for line1, line2 in itertools.izip_longest(*[reader] * 2):
+            for line1, line2 in itertools.zip_longest(*[reader] * 2):
                 info = OslomRunner.RE_INFOLINE.match(line1.strip()).groups()
                 nodes = line2.strip().split(" ")
                 if len(nodes) >= min_cluster_size: # Apply min_cluster_size
