@@ -30,11 +30,9 @@ import subprocess
 import logging
 import simplejson as json
 try:
-    # Python 3 compatible
-    from itertools import zip_longest
+    from itertools import zip_longest # Python 3 compatible
 except ImportError:
-    # Python 2 compatible
-    from itertools import izip_longest as zip_longest
+    from itertools import izip_longest as zip_longest # Python 2 compatible
 
 # Defaults
 DEF_MIN_CLUSTER_SIZE = 0
