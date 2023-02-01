@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 NAME = "oslom-runner"
-VERSION = "1.5"
+VERSION = "1.6"
 DESCRIPTION = "An OSLOM (community finding) runner for Python"
 AUTHOR = "Hugo Hromic"
 AUTHOR_EMAIL = "hhromic@gmail.com"
